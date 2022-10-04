@@ -1,34 +1,86 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import * as React from 'react';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+import { useValidator } from './useValidator';
+import {
+  validatePhoneNumber,
+  validateOnChangePhoneNumber,
+  validateName,
+  validateOnChangeName,
+} from './services/validate';
+
+const App = () => {
+  const [name, setName, nameValidator] = useValidator<string>({
+    initialState: '',
+    validator: validateName,
+    onChangeValidator: validateOnChangeName,
+  });
+  const [phoneNumber, setPhoneNumber, phoneNumberValidator] =
+    useValidator<string>({
+      initialState: '',
+      validator: validatePhoneNumber,
+      onChangeValidator: validateOnChangePhoneNumber,
+    });
+
+  const handleChangePhoneNumber: React.ChangeEventHandler<HTMLInputElement> = ({
+    target,
+  }) => {
+    if (target.value.length > 11) {
+      return;
+    }
+    setPhoneNumber(target.value);
+  };
+
+  const handleChangeName: React.ChangeEventHandler<HTMLInputElement> = ({
+    target,
+  }) => {
+    if (target.value.length > 10) {
+      return;
+    }
+    setName(target.value);
+  };
+
+  const submitForm: React.FormEventHandler = (event) => {
+    event.preventDefault();
+    const validators = [phoneNumberValidator, nameValidator];
+    const isInvalid = validators
+      .map((validator) => validator.validate())
+      .some((valid) => !valid);
+
+    console.log({
+      isInvalid,
+      phoneNumberValidator: phoneNumberValidator.validate(),
+      nameValidator: nameValidator.validate(),
+    });
+
+    if (isInvalid) {
+      return;
+    }
+
+    alert('성공');
+  };
 
   return (
     <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <form onSubmit={submitForm}>
+        <div>
+          <label>Name</label>
+          <input type="text" onChange={handleChangeName} value={name} />
+          <p>{nameValidator.error}</p>
+        </div>
+        <div>
+          <label>Phone</label>
+          <input
+            type="text"
+            onChange={handleChangePhoneNumber}
+            value={phoneNumber}
+          />
+          <p>{phoneNumberValidator.error}</p>
+        </div>
+        <button type="submit">submit</button>
+      </form>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;
